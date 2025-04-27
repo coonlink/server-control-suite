@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Telegram бот для управления сервером.
 Предоставляет интерфейс для мониторинга и управления серверными процессами.
@@ -113,27 +113,27 @@ def load_config():
                         ]
                     except Exception as e:
                         logging.warning("Не удалось загрузить ID администраторов: %s", e)
+            
+            # Загружаем лимиты CPU
+            try:
+                # Ищем значения переменных, исключая shell-переменные с ${} и комментарии
+                normal_pattern = r'CPU_LIMIT_NORMAL=(\d+)'
+                strict_pattern = r'CPU_LIMIT_STRICT=(\d+)'
+                critical_pattern = r'CPU_LIMIT_CRITICAL=(\d+)'
                 
-                # Загружаем лимиты CPU
-                try:
-                    # Ищем значения переменных, исключая shell-переменные с ${} и комментарии
-                    normal_pattern = r'CPU_LIMIT_NORMAL=(\d+)'
-                    strict_pattern = r'CPU_LIMIT_STRICT=(\d+)'
-                    critical_pattern = r'CPU_LIMIT_CRITICAL=(\d+)'
-                    
-                    import re
-                    normal_match = re.search(normal_pattern, content)
-                    strict_match = re.search(strict_pattern, content)
-                    critical_match = re.search(critical_pattern, content)
-                    
-                    if normal_match:
-                        cfg['CPU_LIMITS']['normal'] = int(normal_match.group(1))
-                    if strict_match:
-                        cfg['CPU_LIMITS']['strict'] = int(strict_match.group(1))
-                    if critical_match:
-                        cfg['CPU_LIMITS']['critical'] = int(critical_match.group(1))
-                except Exception as e:
-                    logging.warning("Ошибка при загрузке лимитов CPU, используются значения по умолчанию: %s", e)
+                import re
+                normal_match = re.search(normal_pattern, content)
+                strict_match = re.search(strict_pattern, content)
+                critical_match = re.search(critical_pattern, content)
+                
+                if normal_match:
+                    cfg['CPU_LIMITS']['normal'] = int(normal_match.group(1))
+                if strict_match:
+                    cfg['CPU_LIMITS']['strict'] = int(strict_match.group(1))
+                if critical_match:
+                    cfg['CPU_LIMITS']['critical'] = int(critical_match.group(1))
+            except Exception as e:
+                logging.warning("Ошибка при загрузке лимитов CPU, используются значения по умолчанию: %s", e)
     except (IOError, OSError) as e:
         logging.error("Ошибка доступа к файлу конфигурации: %s", e)
     except Exception as e:  # pylint: disable=broad-exception-caught
@@ -776,5 +776,3 @@ if __name__ == '__main__':
     except Exception as e:  # pylint: disable=broad-exception-caught
         logging.critical("Критическая ошибка при запуске бота: %s", e, exc_info=True)
         print(f"Критическая ошибка при запуске бота: {e}")
-
-
