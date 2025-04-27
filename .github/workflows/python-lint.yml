@@ -55,7 +55,7 @@ jobs:
         # Always return success
         true
     - name: Upload pylint report
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: pylint-report-${{ matrix.python-version }}
         path: pylint-report-${{ matrix.python-version }}.txt 
