@@ -9,12 +9,15 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: ${{ matrix.python-version }}
         cache: 'pip'
     - name: Make setup script executable
       run: chmod +x setup_ci.sh
@@ -25,9 +28,9 @@ jobs:
     - name: Analysing the code with pylint
       run: |
         # Run pylint with output but ensure job doesn't fail
-        echo "Running pylint for code quality analysis"
+        echo "Running pylint for code quality analysis (Python ${{ matrix.python-version }})"
         set +e  # Don't exit on error
-        pylint $(git ls-files '*.py')
+        pylint --rcfile=.pylintrc --fail-under=8.0 $(git ls-files '*.py')
         PYLINT_EXIT_CODE=$?
         set -e  # Restore exit on error
         

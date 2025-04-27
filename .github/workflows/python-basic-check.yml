@@ -9,12 +9,15 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -27,12 +30,12 @@ jobs:
     - name: Check for syntax errors
       run: |
         # Check for Python syntax errors but don't fail the workflow
-        echo "Running flake8 syntax check"
+        echo "Running flake8 syntax check (Python ${{ matrix.python-version }})"
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
     - name: Verify Python files are importable
       run: |
         # Try to check if files are syntactically valid
-        echo "Verifying Python files can be compiled"
+        echo "Verifying Python files can be compiled (Python ${{ matrix.python-version }})"
         set +e  # Don't exit on error
         COMPILE_ERRORS=0
         
