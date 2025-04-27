@@ -10,6 +10,18 @@ import logging
 import subprocess
 import time
 from datetime import datetime
+
+# Проверяем зависимости
+try:
+    # Стандартные модули, но иногда могут отсутствовать
+    import imghdr
+except ImportError as e:
+    logging.critical("Ошибка импорта стандартного модуля: %s", e)
+    print(f"Критическая ошибка: {e}")
+    print("Убедитесь, что используется полная установка Python с стандартными библиотеками")
+    sys.exit(1)
+
+# Проверяем внешние зависимости
 try:
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
     from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
