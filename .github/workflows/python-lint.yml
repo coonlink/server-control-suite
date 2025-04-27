@@ -23,51 +23,20 @@ jobs:
       run: chmod +x setup_ci.sh
     - name: Install dependencies
       run: |
-        # Run the setup script
         ./setup_ci.sh
     - name: Analysing the code with pylint
       run: |
-        # Run pylint with output but ensure job doesn't fail
         echo "Running pylint for code quality analysis (Python ${{ matrix.python-version }})"
-        
-        # Generate a report file
-        echo "Generating report file: pylint-report-${{ matrix.python-version }}.txt"
         python -m pylint --rcfile=.pylintrc $(git ls-files '*.py') > pylint-report-${{ matrix.python-version }}.txt 2>&1 || true
-        
-        # Ensure the file exists
-        touch pylint-report-${{ matrix.python-version }}.txt
-        
-        # Also run for exit code tracking
-        set +e  # Don't exit on error
-        pylint --rcfile=.pylintrc --fail-under=8.0 $(git ls-files '*.py')
-        PYLINT_EXIT_CODE=$?
-        set -e  # Restore exit on error
-        
-        # Display message based on exit code
-        if [ $PYLINT_EXIT_CODE -eq 0 ]; then
-          echo "✅ Pylint passed with no issues"
-        else
-          echo "⚠️ Pylint found some issues (exit code: $PYLINT_EXIT_CODE), but workflow will continue"
-          echo "   You may want to fix these issues in future commits"
-          echo "   See the report file for details"
-        fi
-        
-        # Display the report
-        echo "Pylint Report:"
-        cat pylint-report-${{ matrix.python-version }}.txt
-        
-        # Always return success
-        true
+        pylint --rcfile=.pylintrc --fail-under=8.0 $(git ls-files '*.py') || true
     - name: Verify report file exists
       run: |
-        echo "Checking if report file exists:"
         ls -la
-        echo "Report file size:"
         du -h ./pylint-report-${{ matrix.python-version }}.txt || echo "File not found"
     - name: Upload pylint report
       if: always()
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: pylint-report
         path: ./*report*.txt
-        retention-days: 5 
+        retention-days: 5
