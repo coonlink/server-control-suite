@@ -1,0 +1,84 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+      prerelease:
+        description: 'Is this a prerelease?'
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: |
+          chmod +x setup_ci.sh
+          ./setup_ci.sh
+          
+      - name: Run linting
+        run: |
+          pylint --rcfile=.pylintrc --fail-under=8.0 $(git ls-files '*.py') || echo "Linting issues found but continuing"
+          
+      - name: Create distribution files
+        run: |
+          mkdir -p dist
+          
+          # Remove any existing zip file
+          rm -f dist/server-control-suite-${{ github.event.inputs.version }}.zip
+          
+          # Copy all necessary files to a temp directory
+          mkdir -p temp-release
+          cp -r *.py *.sh .pylintrc requirements.txt README.md .telegram_credentials.example temp-release/
+          
+          # Create zip file
+          cd temp-release
+          zip -r ../dist/server-control-suite-${{ github.event.inputs.version }}.zip ./*
+          cd ..
+          
+          # Cleanup
+          rm -rf temp-release
+          
+          # Log what's in the zip file
+          echo "Contents of the zip file:"
+          unzip -l dist/server-control-suite-${{ github.event.inputs.version }}.zip
+          
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          name: Server Control Suite v${{ github.event.inputs.version }}
+          body: |
+            Server Control Suite v${{ github.event.inputs.version }}
+            
+            This release contains:
+            - Telegram bot for server monitoring and management
+            - Shell scripts for server optimization
+            - Process resource management tools
+            - Server status checking utilities
+            
+            ## Installation
+            1. Download the ZIP file
+            2. Extract to your server directory
+            3. Configure by editing the critical_processes_config.sh file
+            4. Setup Telegram credentials in .telegram_credentials file
+            5. Run `python3 server_control_bot.py` to start the bot
+          draft: false
+          prerelease: ${{ github.event.inputs.prerelease }}
+          files: |
+            dist/server-control-suite-${{ github.event.inputs.version }}.zip 
