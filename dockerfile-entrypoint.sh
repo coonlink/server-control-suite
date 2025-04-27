@@ -249,4 +249,4 @@ fi
 
 # Запуск бота
 cd /app
-python server_control_bot.py
+exec python server_control_bot.py 

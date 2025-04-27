@@ -142,4 +142,108 @@ If you encounter issues:
    ```bash
    docker-compose down
    docker-compose up -d --build
-   ``` 
+   ```
+
+## Building the Docker Image
+
+To build the Docker image:
+
+```bash
+docker build -t server-control-suite .
+```
+
+## Running the Container
+
+You can run the container with:
+
+```bash
+docker run -d --name server-control \
+  -e TELEGRAM_BOT_TOKEN="your_token_here" \
+  -e TELEGRAM_CHAT_ID="your_chat_id_here" \
+  server-control-suite
+```
+
+## Using Docker Compose
+
+A sample `docker-compose.yml` file is included in the repository:
+
+```yaml
+version: '3'
+
+services:
+  server-control:
+    build: .
+    container_name: server-control-bot
+    restart: always
+    environment:
+      - TELEGRAM_BOT_TOKEN=your_token_here
+      - TELEGRAM_CHAT_ID=your_chat_id_here
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./localization:/app/localization
+```
+
+Run with Docker Compose:
+
+```bash
+docker-compose up -d
+```
+
+## Localization in Docker
+
+The Docker container automatically sets up localization files if they don't exist:
+
+1. The entrypoint script creates the necessary directories: `/app/config`, `/app/localization`, `/app/logs`
+2. If localization files aren't found, default English and Russian JSON files are created
+3. If the localization config is missing, a default config is created
+
+If you want to persist your localization settings between container restarts, mount the directories as volumes:
+
+```bash
+docker run -d --name server-control \
+  -e TELEGRAM_BOT_TOKEN="your_token_here" \
+  -e TELEGRAM_CHAT_ID="your_chat_id_here" \
+  -v ./config:/app/config \
+  -v ./localization:/app/localization \
+  -v ./logs:/app/logs \
+  server-control-suite
+```
+
+## Troubleshooting
+
+### Missing Localization Files
+
+If you see warnings like:
+
+```
+WARNING:root:Localization config file not found at /app/config/localization.conf
+ERROR:root:Language file for 'en' not found at /app/localization/en.json
+```
+
+This means the localization files are not properly mounted or created. Solutions:
+
+1. Make sure you're mounting the directories correctly in your Docker run command or docker-compose.yml
+2. Try rebuilding the Docker image to include the latest entrypoint script that creates these files
+3. Manually create the directories and files on your host and mount them using volumes
+
+### Manual Copy of Localization Files
+
+If you need to manually copy the files to the container:
+
+```bash
+# Copy English language file to the container
+docker cp localization/en.json server-control:/app/localization/
+
+# Copy Russian language file to the container
+docker cp localization/ru.json server-control:/app/localization/
+
+# Copy localization config
+docker cp config/localization.conf server-control:/app/config/
+```
+
+Then restart the container:
+
+```bash
+docker restart server-control
+``` 

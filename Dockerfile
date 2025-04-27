@@ -16,16 +16,15 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Create necessary directories
-RUN mkdir -p /app/config /app/logs
+RUN mkdir -p /app/config /app/logs /app/localization
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy entrypoint script first and make it executable
-COPY entrypoint.sh /app/
+# Copy our new entrypoint script and make it executable
+COPY dockerfile-entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
-RUN ls -la /app
 
 # Copy application code
 COPY *.py .
@@ -33,6 +32,10 @@ COPY *.sh .
 COPY .pylintrc .
 COPY README.md .
 COPY .telegram_credentials.example .
+
+# Copy localization files
+COPY config/localization.conf /app/config/localization.conf
+COPY localization/*.json /app/localization/
 
 # Make sure scripts are executable
 RUN chmod +x *.sh
@@ -46,4 +49,3 @@ RUN chmod -R 755 /app
 
 # Set entrypoint 
 ENTRYPOINT ["bash", "/app/entrypoint.sh"]
-CMD ["server_control_bot.py"]
