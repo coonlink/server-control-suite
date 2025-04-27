@@ -1,0 +1,24 @@
+# Пример истории bash команд (без токенов и паролей)
+# Заменены все конфиденциальные данные
+
+# Проверка статуса сервисов
+systemctl status nginx
+systemctl status mysql
+
+# Оптимизация сервера
+./optimize_server.sh
+./process_resource_manager.sh
+
+# Мониторинг
+htop
+df -h
+free -m
+ps aux | grep node
+
+# Работа с Telegram ботом
+curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getMe"
+curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=https://your-domain:8000"
+
+# Запуск скриптов
+python3 server_control_bot.py
+bash check_server_status.sh
