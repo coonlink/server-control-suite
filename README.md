@@ -1,89 +1,118 @@
-# Server Control Suite
+<h1 align="center">Server Control Suite</h1>
 
-Набор инструментов для мониторинга, управления и оптимизации сервера через Telegram-бота.
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/b1f6a9f3-2690-41ef-8c7a-c3119f29bab3" alt="Preview" width="600px">
+</div>
 
-## Состав
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.7+-blue.svg" alt="Python Version">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+  <br>
+  <a href="https://t.me/coonlink">
+    <img src="https://img.shields.io/badge/developer-@coonlink-blue.svg" alt="Developer">
+  </a>
+</p>
 
-- **server_control_bot.py** - Основной Telegram-бот для управления сервером
-- **optimize_server.sh** - Скрипт оптимизации сервера
-- **process_resource_manager.sh** - Управление процессами и ресурсами
-- **check_server_status.sh** - Мониторинг состояния сервера
-- **critical_processes_config.sh** - Конфигурация критических процессов
-- **check_libraries.sh** - Проверка установленных библиотек и компонентов
+<p align="center">
+  <a href="README.md">English</a> |
+  <a href="./README-RU.md">Русский</a>
+</p>
 
-## Установка
+## About
+
+Server Control Suite is a powerful set of tools for server monitoring, management, and optimization through a Telegram bot interface. It allows system administrators to remotely control server resources, monitor performance, and automatically optimize the system when needed.
+
+## Features
+
+- **Real-time Monitoring**: Get current server status including CPU, memory, and disk usage
+- **Process Management**: View, limit, or terminate resource-intensive processes
+- **Automatic Optimization**: Schedule or manually trigger server optimization routines
+- **Night Mode**: Enable energy-saving night mode with stricter resource limits
+- **Customizable Alerts**: Receive notifications when system load exceeds defined thresholds
+- **Multi-language Support**: Available in English and Russian
+
+## Components
+
+- **server_control_bot.py** - Main Telegram bot for server management
+- **optimize_server.sh** - Server optimization script
+- **process_resource_manager.sh** - Process and resource management
+- **check_server_status.sh** - Server status monitoring
+- **critical_processes_config.sh** - Critical process configuration
+- **check_libraries.sh** - Library and component dependency checker
+
+## Installation
 
 ```bash
-# Клонируйте репозиторий
-git clone [URL_репозитория] /root/server-control-suite
+# Clone the repository
+git clone [repository_URL] /root/server-control-suite
 
-# Перейдите в директорию
+# Navigate to the directory
 cd /root/server-control-suite
 
-# Установите зависимости
+# Install dependencies
 apt update
 apt install -y python3 python3-pip bc cpulimit curl wget
 
-# Установите python зависимости
+# Install Python dependencies
 pip3 install aiogram requests
 
-# ВАЖНО: для server_control_bot.py используйте конкретную версию python-telegram-bot
-pip3 install python-telegram-bot==13.7
+# IMPORTANT: For server_control_bot.py use the specific version of python-telegram-bot
+pip3 install python-telegram-bot==13.7 urllib3==1.26.6
 
-# Настройте конфигурацию
+# Configure settings
 nano critical_processes_config.sh
-# Настройте переменные под ваш сервер
+# Configure variables for your server
 
-# Сделайте скрипты исполняемыми
+# Make scripts executable
 chmod +x *.sh
 ```
 
-## ⚠️ Важно! Безопасность ⚠️
+## Security Configuration
 
-**НИКОГДА не храните реальные токены, ключи или учетные данные в репозитории!**
+**NEVER store actual tokens, keys, or credentials in the repository!**
 
-1. Создайте файл с реальными учетными данными из шаблона:
+1. Create a file with real credentials from the template:
    ```bash
    cp .telegram_credentials.example .telegram_credentials
-   nano .telegram_credentials  # Добавьте свои данные
+   nano .telegram_credentials  # Add your data
    ```
 
-2. Файл `.telegram_credentials` добавлен в `.gitignore` и не должен быть включен в репозиторий.
+2. The `.telegram_credentials` file is added to `.gitignore` and should not be included in the repository.
 
-3. Периодически проверяйте, что конфиденциальные данные не были случайно добавлены в историю коммитов.
+3. Regularly check that confidential data hasn't been accidentally added to commit history.
 
-## Использование
+## Usage
 
-### Запуск Telegram-бота
+### Starting the Telegram Bot
 
 ```bash
 python3 server_control_bot.py
 ```
 
-### Проверка состояния сервера
+### Checking Server Status
 
 ```bash
 ./check_server_status.sh
 ```
 
-### Оптимизация сервера
+### Optimizing the Server
 
 ```bash
 ./optimize_server.sh
 ```
 
-### Проверка установленных библиотек
+### Checking Installed Libraries
 
 ```bash
 ./check_libraries.sh
 ```
 
-## Настройка автозапуска
+## Autostart Configuration
 
-Для автоматического запуска бота после перезагрузки сервера:
+For automatic bot startup after server reboot:
 
 ```bash
-# Создайте systemd-сервис
+# Create systemd service
 cat > /etc/systemd/system/server-control-bot.service << EOL
 [Unit]
 Description=Server Control Telegram Bot
@@ -100,203 +129,94 @@ RestartSec=10
 WantedBy=multi-user.target
 EOL
 
-# Включите и запустите сервис
+# Enable and start the service
 systemctl enable server-control-bot
 systemctl start server-control-bot
 ```
 
-## Обновление
+## Common Issues and Troubleshooting
 
-Для обновления скриптов:
+### Python Module Issues
 
-```bash
-cd /root/server-control-suite
-git pull
-systemctl restart server-control-bot
-```
+If you encounter errors related to missing Python modules (e.g., `No module named 'imghdr'`, `No module named 'urllib3.contrib.appengine'`), you should:
 
-## Linting and Code Quality
-
-This project uses Pylint for code quality checks. The CI pipeline requires a minimum Pylint score of 8.0/10.
-
-### Running Pylint Locally
-
-To check your code before committing:
-
-```bash
-# Install pylint
-pip install pylint
-
-# Run pylint on all Python files
-pylint $(git ls-files '*.py')
-
-# Or with specific configuration
-pylint --rcfile=.pylintrc $(git ls-files '*.py')
-```
-
-### Common Pylint Issues and Fixes
-
-- **Missing docstrings**: Add descriptive docstrings to modules, classes, and functions
-- **Line too long**: Keep lines under 120 characters
-- **Unused imports**: Remove imports that aren't used
-- **Too many arguments**: Consider refactoring functions with many parameters
-
-You can disable specific checks in the `.pylintrc` file or inline in your code:
-
-```python
-# pylint: disable=unused-import
-import os
-```
-
-## Проблемы с CI/CD
-
-Если возникают проблемы с CI/CD пайплайном:
-
-1. Убедитесь что все зависимости указаны в `requirements.txt`
-2. Проверьте что версия Python соответствует требуемой (Python 3.9)
-3. Запустите скрипт настройки CI локально: `./setup_ci.sh`
-
-Для отладки проблем с пайплайном используйте более простой воркфлоу `python-basic-check.yml`.
-
-### Решение проблемы с exit code 16 (pylint)
-
-Exit code 16 от pylint означает, что линтер нашел ошибки/предупреждения, превышающие допустимый порог.
-
-Для решения этой проблемы есть несколько подходов:
-
-1. **Запустите pylint локально** для просмотра конкретных ошибок:
+1. Ensure you're using a complete Python installation:
    ```bash
-   pylint --rcfile=.pylintrc server_control_bot.py
-   ```
-
-2. **Исправьте указанные проблемы** в коде или отключите конкретные проверки в `.pylintrc`:
-   ```ini
-   [MESSAGES CONTROL]
-   disable=trailing-whitespace,
-           trailing-newlines,
-           line-too-long,
-           broad-exception-caught
-   ```
-
-3. **Используйте параметр `--fail-under`** непосредственно в команде для контроля порога ошибок:
-   ```bash
-   # Позволяет проходить проверку при рейтинге 8.0/10 и выше
-   pylint --fail-under=8.0 $(git ls-files '*.py')
-   ```
-
-4. **Игнорируйте код завершения pylint** в CI/CD пайплайне:
-   ```bash
-   # Запуск pylint без прерывания пайплайна при ошибках
-   pylint $(git ls-files '*.py') || true
-   ```
-
-5. **Проверяйте на разных версиях Python** - иногда разные версии имеют разные строгости проверок:
-   ```yaml
-   strategy:
-     matrix:
-       python-version: ["3.8", "3.9", "3.10"]
-   ```
-
-6. **Создавайте отчеты pylint** для удобства отладки:
-   ```bash
-   # Создание отчета и вывод в файл
-   pylint $(git ls-files '*.py') > pylint-report.txt
-   
-   # Просмотр отчета
-   cat pylint-report.txt
-   ```
-
-В нашей CI конфигурации мы используем комбинацию этих подходов, проверяя код на нескольких версиях Python, устанавливая порог качества в 8.0/10 и создавая отчеты, которые сохраняются как артефакты сборки для дальнейшего анализа.
-
-## Распространенные проблемы и их решение
-
-### Проблемы с отступами в Python коде
-
-В файле `server_control_bot.py` может быть несколько мест с некорректными отступами, которые приводят к синтаксическим ошибкам при запуске скрипта. Основные проблемные места:
-
-1. В блоке загрузки файла учетных данных (примерно строки 57-64)
-2. В блоке чтения конфигурационного файла (примерно строки 78-80)
-3. В обработчике callback запросов (примерно строки 221-229)
-4. В блоке обработки ошибок (примерно строки 400-410)
-
-Решение:
-- Проверьте правильность отступов во всех блоках try/except
-- Убедитесь, что у всех вложенных блоков кода корректные отступы
-- При редактировании используйте IDE с подсветкой синтаксиса Python
-
-### Отсутствующие модули Python
-
-При ошибке `No module named 'imghdr'` или других отсутствующих модулях, необходимо:
-
-1. Убедиться, что используется полная установка Python:
-   ```bash
-   # Для Debian/Ubuntu
+   # For Debian/Ubuntu
    apt install python3-full
    
-   # Для CentOS/RHEL
+   # For CentOS/RHEL
    yum install python3 python3-libs
    ```
 
-2. Установить точную версию библиотеки python-telegram-bot:
+2. Install all necessary dependencies:
    ```bash
-   pip3 install python-telegram-bot==13.7
+   pip3 install python-telegram-bot==13.7 urllib3==1.26.6
    ```
 
-3. Проверить, что все зависимости установлены:
+3. Check that all dependencies are installed:
    ```bash
    ./check_libraries.sh
    ```
 
-Если ошибка сохраняется, проверьте логи и обновите Python до последней версии.
+The latest version of the bot includes stubs for commonly missing modules:
+- `imghdr` - used for image type detection
+- `urllib3.contrib.appengine` - used for AppEngine environment checks
 
-## Creating Releases
+### Callback Request Issues
 
-### Via GitHub Actions
+If pressing buttons in the Telegram bot doesn't trigger any action:
 
-To create a new release via GitHub Actions:
+1. **Check logs**:
+   ```bash
+   tail -f server_control_bot.log
+   ```
+   Logs will show what errors occur during callback request processing.
 
-1. Go to the GitHub Actions tab in your repository
-2. Select the "Create Release" workflow
-3. Click "Run workflow"
-4. Enter the version number (e.g., 1.0.0)
-5. Choose whether this is a prerelease
-6. Run the workflow
+2. **Verify script availability**:
+   Ensure all necessary scripts exist and have execution permissions:
+   ```bash
+   ls -la *.sh
+   chmod +x *.sh
+   ```
+   
+   Minimum set of scripts required:
+   - `check_server_status.sh`
+   - `optimize_server.sh`
+   - `monitor_heavy_processes.sh`
 
-The action will:
-- Run linting checks
-- Build a ZIP file containing all necessary files
-- Create a GitHub release with the ZIP file attached
+3. **Correct dependency versions**:
+   ```bash
+   pip3 install python-telegram-bot==13.7 urllib3==1.26.6
+   ```
+   
+   Newer versions of urllib3 may cause issues. Version 1.26.6 is tested and works with python-telegram-bot 13.7.
 
-### Locally
+4. **Verify connection to Telegram API**:
+   ```bash
+   curl -s https://api.telegram.org/bot<YOUR_TOKEN>/getMe | grep "ok"
+   ```
+   
+## Language Configuration
 
-To create a release package locally:
+The bot supports English and Russian languages. To configure your preferred language:
 
-```bash
-# Make the script executable (first time only)
-chmod +x create_release.sh
+1. Edit the language configuration file:
+   ```bash
+   nano config/localization.conf
+   ```
 
-# Create a release with default version (1.0.0)
-./create_release.sh
+2. Set the default language and other language options:
+   ```
+   DEFAULT_LANGUAGE="en"  # Change to "ru" for Russian
+   MULTI_LANGUAGE_SUPPORT=true
+   USER_LANGUAGE_SELECTION=true
+   ```
 
-# Or specify a version
-./create_release.sh 1.2.3
-```
+3. In the Telegram bot, use the command `/language` to change the interface language.
 
-The ZIP file will be created in the `dist/` directory.
+## License
 
-## Docker Deployment
+MIT © Coonlink
 
-You can also deploy the Server Control Suite using Docker:
-
-```bash
-# Clone the repository
-git clone https://github.com/coonlink/server-control-suite.git
-
-# Navigate to the directory
-cd server-control-suite
-
-# Build and start the container
-docker-compose up -d
-```
-
-For detailed Docker deployment instructions, see [DOCKER.md](DOCKER.md). 
+## Built with ❤️ by Coonlink 
