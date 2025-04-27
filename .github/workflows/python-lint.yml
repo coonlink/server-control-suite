@@ -31,7 +31,11 @@ jobs:
         echo "Running pylint for code quality analysis (Python ${{ matrix.python-version }})"
         
         # Generate a report file
-        pylint --rcfile=.pylintrc $(git ls-files '*.py') > pylint-report-${{ matrix.python-version }}.txt || true
+        echo "Generating report file: pylint-report-${{ matrix.python-version }}.txt"
+        python -m pylint --rcfile=.pylintrc $(git ls-files '*.py') > pylint-report-${{ matrix.python-version }}.txt 2>&1 || true
+        
+        # Ensure the file exists
+        touch pylint-report-${{ matrix.python-version }}.txt
         
         # Also run for exit code tracking
         set +e  # Don't exit on error
@@ -54,8 +58,16 @@ jobs:
         
         # Always return success
         true
+    - name: Verify report file exists
+      run: |
+        echo "Checking if report file exists:"
+        ls -la
+        echo "Report file size:"
+        du -h ./pylint-report-${{ matrix.python-version }}.txt || echo "File not found"
     - name: Upload pylint report
-      uses: actions/upload-artifact@v3
+      if: always()
+      uses: actions/upload-artifact@v2
       with:
-        name: pylint-report-${{ matrix.python-version }}
-        path: pylint-report-${{ matrix.python-version }}.txt 
+        name: pylint-report
+        path: ./*report*.txt
+        retention-days: 5 
