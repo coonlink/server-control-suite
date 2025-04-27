@@ -7,15 +7,33 @@ echo "Setting up CI environment for Server Control Suite"
 python -m pip install --upgrade pip
 
 # Install pylint first to ensure it's available
+echo "Installing pylint..."
 pip install pylint==2.17.0
 
+# Verify pylint installation
+if command -v pylint &> /dev/null; then
+    echo "Pylint installed successfully"
+    pylint --version
+else
+    echo "WARNING: Pylint installation may have failed"
+fi
+
 # Install specific version of python-telegram-bot
+echo "Installing python-telegram-bot..."
 pip install python-telegram-bot==13.7
 
 # Install other dependencies if requirements.txt exists
 if [ -f requirements.txt ]; then
     echo "Installing dependencies from requirements.txt"
-    pip install -r requirements.txt
+    cat requirements.txt
+    pip install -r requirements.txt || echo "WARNING: Some dependencies could not be installed"
+fi
+
+# Verify pylint configuration
+if [ -f .pylintrc ]; then
+    echo "Found pylint configuration (.pylintrc)"
+else
+    echo "WARNING: No pylint configuration file found. Using default settings."
 fi
 
 # Verify installations
