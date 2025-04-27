@@ -110,4 +110,20 @@ systemctl start server-control-bot
 cd /root/server-control-suite
 git pull
 systemctl restart server-control-bot
-``` 
+```
+
+## Линтер (Pylint)
+
+Проект использует Pylint для статического анализа кода. Настройки линтера хранятся в файле `.pylintrc`.
+
+Для запуска линтера локально:
+
+```bash
+# Установите зависимости
+pip install -r requirements.txt
+
+# Запустите Pylint
+pylint --rcfile=.pylintrc server_control_bot.py
+```
+
+В CI/CD пайплайне файл `.pylintrc` используется автоматически для согласованного форматирования кода. 

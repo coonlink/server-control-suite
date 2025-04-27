@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Telegram бот для управления сервером.
 Предоставляет интерфейс для мониторинга и управления серверными процессами.
@@ -503,3 +503,5 @@ if __name__ == '__main__':
     except Exception as e:  # pylint: disable=broad-exception-caught
         logging.critical("Критическая ошибка при запуске бота: %s", e, exc_info=True)
         print(f"Критическая ошибка при запуске бота: {e}")
+
+
