@@ -614,7 +614,7 @@ if __name__ == '__main__':
         dispatcher.add_handler(CommandHandler("start", start_command))
         dispatcher.add_handler(CommandHandler("help", start_command))
         
-        # Регистрируем обработчик callback кнопок и проверяем его наличие
+        # Регистрируем обработчик callback кнопок
         callback_handler = CallbackQueryHandler(button_callback)
         dispatcher.add_handler(callback_handler)
         
@@ -627,9 +627,9 @@ if __name__ == '__main__':
         )
         logging.info("Планировщик периодических отчетов запущен. Интервал: %s секунд", STATUS_REPORT_INTERVAL)
         
-        # Проверка зарегистрированных обработчиков
-        handlers = dispatcher._handlers
-        logging.info("Зарегистрированные обработчики: %s", handlers)
+        # Удаляем проблемную строку, которая вызывает ошибку
+        # Просто информируем о регистрации обработчиков
+        logging.info("Обработчики команд и callback зарегистрированы")
         
         # Запуск бота с подробным логированием
         logging.info("Запускаем polling...")
