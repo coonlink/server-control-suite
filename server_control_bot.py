@@ -19,18 +19,24 @@ except ImportError as e:
     print("Установите python-telegram-bot версии 13.7: pip install python-telegram-bot==13.7")
     sys.exit(1)
 
-# Конфигурация
-CONFIG_FILE = os.path.join(os.path.dirname(__file__), "critical_processes_config.sh")
-CREDENTIALS_FILE = os.path.join(os.path.dirname(__file__), ".telegram_credentials")
-LOG_FILE = os.path.join(os.path.dirname(__file__), "server_control_bot.log")
-HISTORY_FILE = os.path.join(os.path.dirname(__file__), "server_stats_history.json")
+# Базовая директория проекта
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Настройка логирования
+# Конфигурация - используем относительные пути
+CONFIG_FILE = os.path.join(BASE_DIR, "critical_processes_config.sh")
+CREDENTIALS_FILE = os.path.join(BASE_DIR, ".telegram_credentials")
+LOG_FILE = os.path.join(BASE_DIR, "server_control_bot.log")
+HISTORY_FILE = os.path.join(BASE_DIR, "server_stats_history.json")
+
+# Логирование в консоль и файл
 logging.basicConfig(
-    filename=LOG_FILE,
     level=logging.INFO,
     format='[%(asctime)s] %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.FileHandler(LOG_FILE),
+        logging.StreamHandler()
+    ]
 )
 
 def load_config():
@@ -333,7 +339,8 @@ def button_callback(update: Update, _context: CallbackContext):  # pylint: disab
         
         elif action == "night_mode":
             # Включаем ночной режим
-            with subprocess.Popen(["/root/night_optimize.sh"]) as _:
+            night_script = os.path.join(BASE_DIR, "night_optimize.sh")
+            with subprocess.Popen([night_script]) as _:
                 pass
             query.edit_message_text(
                 "🌙 Ночной режим активирован\n"
@@ -352,7 +359,8 @@ def button_callback(update: Update, _context: CallbackContext):  # pylint: disab
         
         elif action == "status":
             try:
-                cmd = ["/root/check_server_status.sh", "--silent"]
+                status_script = os.path.join(BASE_DIR, "check_server_status.sh")
+                cmd = [status_script, "--silent"]
                 result = subprocess.check_output(
                     cmd, stderr=subprocess.STDOUT, universal_newlines=True
                 )
@@ -374,7 +382,8 @@ def button_callback(update: Update, _context: CallbackContext):  # pylint: disab
             )
         
         elif action == "optimize":
-            with subprocess.Popen(["/root/optimize_server.sh"]) as _:
+            optimize_script = os.path.join(BASE_DIR, "optimize_server.sh")
+            with subprocess.Popen([optimize_script]) as _:
                 pass
             query.edit_message_text(
                 "⚡ Оптимизация запущена\n"
@@ -430,7 +439,8 @@ def button_callback(update: Update, _context: CallbackContext):  # pylint: disab
         
         elif action == "heavy_processes":
             try:
-                cmd = ["/root/monitor_heavy_processes.sh", "--analyze"]
+                heavy_script = os.path.join(BASE_DIR, "monitor_heavy_processes.sh")
+                cmd = [heavy_script, "--analyze"]
                 result = subprocess.check_output(
                     cmd, stderr=subprocess.STDOUT, universal_newlines=True
                 )

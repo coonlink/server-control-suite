@@ -2,19 +2,31 @@
 
 # Конфигурационный файл для критичных процессов и настроек оптимизации
 
-# Загружаем учетные данные Telegram из защищенного файла
-source /root/.telegram_credentials
+# Check if TELEGRAM_BOT_TOKEN is set in environment, otherwise use default
+if [ -z "${TELEGRAM_BOT_TOKEN}" ]; then
+  # If environment variable is not set, try to read from .telegram_credentials
+  SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+  CREDENTIALS_FILE="$SCRIPT_DIR/.telegram_credentials"
+  
+  if [ -f "$CREDENTIALS_FILE" ]; then
+    source "$CREDENTIALS_FILE"
+  fi
+fi
 
-# Список авторизованных админов (Telegram ID)
-AUTHORIZED_ADMINS=(
-  "YOUR_TELEGRAM_ID_HERE"  # Замените на ваш Telegram ID
-)
+# Check if TELEGRAM_CHAT_ID is set in environment, otherwise use default
+if [ -z "${TELEGRAM_CHAT_ID}" ]; then
+  # Get from .telegram_credentials if already sourced above
+  # If not set, define authorized admins array
+  if [ -z "${AUTHORIZED_ADMINS}" ]; then
+    AUTHORIZED_ADMINS=("CHAT_ID_HERE")
+  fi
+fi
 
 # Настройки пороговых значений
-LOAD_THRESHOLD=5.0        # Порог высокой нагрузки
+LOAD_THRESHOLD=${LOAD_THRESHOLD:-5.0}        # Порог высокой нагрузки
 CPU_CRITICAL=80.0         # Критически высокое использование CPU в %
-MEM_CRITICAL=80.0         # Критически высокое использование памяти в %
-DISK_CRITICAL=90.0        # Критическое использование диска в %
+MEM_CRITICAL=${MEM_CRITICAL:-90}        # Критическое использование памяти в %
+DISK_CRITICAL=${DISK_CRITICAL:-90}        # Критическое использование диска в %
 
 # Уровни уведомлений
 NOTIFICATION_LEVELS=(
@@ -40,6 +52,7 @@ CRITICAL_PROCESSES=(
   "docker"
   "bash"
   "sh"
+  "python"
 )
 
 # Список процессов, которые можно ограничить, но не останавливать
@@ -60,9 +73,9 @@ STOPPABLE_PROCESSES=(
 )
 
 # Ограничения CPU для процессов
-CPU_LIMIT_NORMAL=30       # Нормальное ограничение CPU
-CPU_LIMIT_STRICT=15       # Строгое ограничение CPU
-CPU_LIMIT_CRITICAL=5      # Критическое ограничение CPU
+CPU_LIMIT_NORMAL=${CPU_LIMIT_NORMAL:-50}       # Нормальное ограничение CPU
+CPU_LIMIT_STRICT=${CPU_LIMIT_STRICT:-30}       # Строгое ограничение CPU
+CPU_LIMIT_CRITICAL=${CPU_LIMIT_CRITICAL:-10}      # Критическое ограничение CPU
 
 # Ограничения памяти (в МБ)
 MEM_LIMIT_NORMAL=1024    # Обычное ограничение памяти
@@ -213,19 +226,18 @@ send_telegram_message() {
 # Функция отправки уведомления в Telegram
 send_telegram_notification() {
   local message="$1"
-  local CHAT_ID="782821990"  # Измените на ваш ID
-
-  # Проверяем, определен ли основной токен
-  if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
-      echo "ОШИБКА: Не задан основной TELEGRAM_BOT_TOKEN для уведомлений"
-      return 1
+  
+  # Check if Telegram credentials are available
+  if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+    echo "Ошибка: Не настроены учетные данные Telegram"
+    return 1
   fi
-
-  curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-    -d "chat_id=${CHAT_ID}" \
-    -d "text=${message}" \
-    -d "parse_mode=HTML" \
-    -d "disable_web_page_preview=true" > /dev/null 2>&1
+  
+  # Отправляем сообщение
+  curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+    -d chat_id="$TELEGRAM_CHAT_ID" \
+    -d text="$message" \
+    -d parse_mode="HTML" > /dev/null
 }
 
 # Функция для определения критичных процессов

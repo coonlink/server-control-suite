@@ -1,7 +1,10 @@
 #!/bin/bash
 
-# Загружаем конфигурацию
-CONFIG_FILE="/root/critical_processes_config.sh"
+# Get script directory for relative paths
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Загружаем конфигурацию из текущей директории
+CONFIG_FILE="$SCRIPT_DIR/critical_processes_config.sh"
 if [ -f "$CONFIG_FILE" ]; then
   source "$CONFIG_FILE"
 else
@@ -63,9 +66,10 @@ OPEN_PORTS=$(netstat -tuln | grep LISTEN | awk '{print $4}' | sort)
 
 # Проверяем историю нагрузки из лог-файла, если он существует
 LOAD_HISTORY=""
-if [ -f "/var/log/performance_stats.log" ]; then
+LOG_FILE="$SCRIPT_DIR/performance_stats.log"
+if [ -f "$LOG_FILE" ]; then
   LOAD_HISTORY="📈 <b>История нагрузки:</b>
-<pre>$(tail -n 5 /var/log/performance_stats.log)</pre>"
+<pre>$(tail -n 5 $LOG_FILE)</pre>"
 fi
 
 # Формируем сообщение
@@ -105,7 +109,7 @@ MEM_PERCENT=$(free | awk 'NR==2{printf "%.0f", $3*100/$2}')
 DISK_PERCENT=$(df -h / | awk 'NR==2{print $5}' | tr -d '%')
 
 # Добавляем текущую запись в файл статистики
-STATS_FILE="/var/log/performance_stats.log"
+STATS_FILE="$SCRIPT_DIR/performance_stats.log"
 echo "$(date '+%Y-%m-%d %H:%M:%S') LOAD: $LOAD CPU: ${CPU_USAGE}% MEM: ${MEM_PERCENT}%" >> $STATS_FILE
 
 # Проверяем критические значения и предлагаем действия
