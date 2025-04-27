@@ -228,15 +228,26 @@ Exit code 16 от pylint означает, что линтер нашел оши
 
 При ошибке `No module named 'imghdr'` или других отсутствующих модулях, необходимо:
 
-1. Установить точную версию библиотеки python-telegram-bot:
+1. Убедиться, что используется полная установка Python:
+   ```bash
+   # Для Debian/Ubuntu
+   apt install python3-full
+   
+   # Для CentOS/RHEL
+   yum install python3 python3-libs
+   ```
+
+2. Установить точную версию библиотеки python-telegram-bot:
    ```bash
    pip3 install python-telegram-bot==13.7
    ```
 
-2. Проверить, что все зависимости установлены:
+3. Проверить, что все зависимости установлены:
    ```bash
    ./check_libraries.sh
    ```
+
+Если ошибка сохраняется, проверьте логи и обновите Python до последней версии.
 
 ## Creating Releases
 
