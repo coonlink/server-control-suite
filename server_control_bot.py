@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Telegram бот для управления сервером.
 Предоставляет интерфейс для мониторинга и управления серверными процессами.
@@ -35,7 +35,7 @@ logging.basicConfig(
 
 def load_config():
     """
-    Загружает конфигурацию из файлов.
+    Загружает конфигурацию из файлов и переменных окружения.
     Returns:
         dict: Словарь с конфигурацией
     """
@@ -47,25 +47,48 @@ def load_config():
         'NOTIFICATION_LEVELS': {}
     }
     
-    # Загружаем учетные данные Telegram
-    try:
-        with open(CREDENTIALS_FILE, 'r', encoding='utf-8') as f:
-            for line in f:
-                if line.startswith('TELEGRAM_BOT_TOKEN='):
-                    cfg['BOT_TOKEN'] = line.split('=')[1].strip().strip('"\'')
-    except (IOError, OSError) as e:
-        logging.error("Ошибка доступа к файлу учетных данных: %s", e)
-        sys.exit(1)
-    except Exception as e:  # pylint: disable=broad-exception-caught
-        logging.error("Неожиданная ошибка при загрузке учетных данных: %s", e)
-        sys.exit(1)
+    # Приоритетно загружаем токен из переменной окружения
+    env_token = os.environ.get('TELEGRAM_BOT_TOKEN')
+    if env_token:
+        cfg['BOT_TOKEN'] = env_token
+        logging.info("Токен бота загружен из переменной окружения TELEGRAM_BOT_TOKEN")
+    
+    # Приоритетно загружаем chat_id из переменной окружения
+    env_chat_id = os.environ.get('TELEGRAM_CHAT_ID')
+    if env_chat_id and env_chat_id.isdigit():
+        cfg['AUTHORIZED_ADMINS'] = [int(env_chat_id)]
+        logging.info("ID администратора загружен из переменной окружения TELEGRAM_CHAT_ID")
+    
+    # Если переменные окружения не установлены, пробуем загрузить из файла
+    if not cfg['BOT_TOKEN'] or not cfg['AUTHORIZED_ADMINS']:
+        # Загружаем учетные данные Telegram из файла
+        try:
+            if os.path.exists(CREDENTIALS_FILE):
+                with open(CREDENTIALS_FILE, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        if line.startswith('TELEGRAM_BOT_TOKEN=') and not cfg['BOT_TOKEN']:
+                            cfg['BOT_TOKEN'] = line.split('=')[1].strip().strip('"\'')
+                        elif line.startswith('TELEGRAM_CHAT_ID=') and not cfg['AUTHORIZED_ADMINS']:
+                            chat_id = line.split('=')[1].strip().strip('"\'')
+                            if chat_id.isdigit():
+                                cfg['AUTHORIZED_ADMINS'] = [int(chat_id)]
+        except (IOError, OSError) as e:
+            logging.error("Ошибка доступа к файлу учетных данных: %s", e)
+            if not cfg['BOT_TOKEN'] or not cfg['AUTHORIZED_ADMINS']:
+                logging.critical("Не удалось загрузить учетные данные ни из переменных окружения, ни из файла")
+                sys.exit(1)
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logging.error("Неожиданная ошибка при загрузке учетных данных: %s", e)
+            if not cfg['BOT_TOKEN'] or not cfg['AUTHORIZED_ADMINS']:
+                logging.critical("Не удалось загрузить учетные данные ни из переменных окружения, ни из файла")
+                sys.exit(1)
     
     # Загружаем основную конфигурацию
     try:
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             content = f.read()
-            # Загружаем админов
-            if 'AUTHORIZED_ADMINS=(' in content:
+            # Загружаем админов если они не были загружены из переменных окружения
+            if not cfg['AUTHORIZED_ADMINS'] and 'AUTHORIZED_ADMINS=(' in content:
                 admins = content.split('AUTHORIZED_ADMINS=(')[1].split(')')[0]
                 # Преобразуем строки в числа, фильтруя только целые числа
                 cfg['AUTHORIZED_ADMINS'] = [
@@ -93,6 +116,14 @@ def load_config():
     except Exception as e:  # pylint: disable=broad-exception-caught
         logging.error("Неожиданная ошибка при загрузке конфигурации: %s", e)
         sys.exit(1)
+    
+    # Проверяем наличие необходимых данных
+    if not cfg['BOT_TOKEN']:
+        logging.critical("Не указан токен бота в переменных окружения или файле учетных данных")
+        sys.exit(1)
+    
+    if not cfg['AUTHORIZED_ADMINS']:
+        logging.warning("Не указаны авторизованные администраторы. Доступ к боту будет ограничен.")
     
     return cfg
 
@@ -503,5 +534,3 @@ if __name__ == '__main__':
     except Exception as e:  # pylint: disable=broad-exception-caught
         logging.critical("Критическая ошибка при запуске бота: %s", e, exc_info=True)
         print(f"Критическая ошибка при запуске бота: {e}")
-
-
