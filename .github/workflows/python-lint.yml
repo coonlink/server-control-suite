@@ -24,6 +24,20 @@ jobs:
         ./setup_ci.sh
     - name: Analysing the code with pylint
       run: |
-        # Use the project's pylint configuration with a specific fail threshold
-        echo "Running pylint with custom config"
-        pylint --rcfile=.pylintrc --fail-under=7.0 $(git ls-files '*.py') || echo "Pylint check completed with score below threshold but workflow will continue" 
+        # Run pylint with output but ensure job doesn't fail
+        echo "Running pylint for code quality analysis"
+        set +e  # Don't exit on error
+        pylint $(git ls-files '*.py')
+        PYLINT_EXIT_CODE=$?
+        set -e  # Restore exit on error
+        
+        # Display message based on exit code
+        if [ $PYLINT_EXIT_CODE -eq 0 ]; then
+          echo "✅ Pylint passed with no issues"
+        else
+          echo "⚠️ Pylint found some issues (exit code: $PYLINT_EXIT_CODE), but workflow will continue"
+          echo "   You may want to fix these issues in future commits"
+        fi
+        
+        # Always return success
+        true 

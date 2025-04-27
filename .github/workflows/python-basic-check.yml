@@ -26,12 +26,29 @@ jobs:
         fi
     - name: Check for syntax errors
       run: |
-        # Stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exit-zero
+        # Check for Python syntax errors but don't fail the workflow
+        echo "Running flake8 syntax check"
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
     - name: Verify Python files are importable
       run: |
-        # Try to check if the file is syntactically valid
+        # Try to check if files are syntactically valid
+        echo "Verifying Python files can be compiled"
+        set +e  # Don't exit on error
+        COMPILE_ERRORS=0
+        
         for py_file in $(find . -name "*.py"); do
           echo "Checking $py_file"
-          python -m py_compile $py_file || echo "Compilation failed but continuing"
-        done 
+          if ! python -m py_compile $py_file; then
+            echo "❌ Compilation failed for $py_file"
+            COMPILE_ERRORS=$((COMPILE_ERRORS+1))
+          fi
+        done
+        
+        if [ $COMPILE_ERRORS -eq 0 ]; then
+          echo "✅ All Python files compile successfully"
+        else
+          echo "⚠️ $COMPILE_ERRORS file(s) failed to compile, but workflow will continue"
+        fi
+        
+        # Always return success
+        true 
