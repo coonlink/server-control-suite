@@ -203,4 +203,56 @@ Exit code 16 от pylint означает, что линтер нашел оши
    cat pylint-report.txt
    ```
 
-В нашей CI конфигурации мы используем комбинацию этих подходов, проверяя код на нескольких версиях Python, устанавливая порог качества в 8.0/10 и создавая отчеты, которые сохраняются как артефакты сборки для дальнейшего анализа. 
+В нашей CI конфигурации мы используем комбинацию этих подходов, проверяя код на нескольких версиях Python, устанавливая порог качества в 8.0/10 и создавая отчеты, которые сохраняются как артефакты сборки для дальнейшего анализа.
+
+## Creating Releases
+
+### Via GitHub Actions
+
+To create a new release via GitHub Actions:
+
+1. Go to the GitHub Actions tab in your repository
+2. Select the "Create Release" workflow
+3. Click "Run workflow"
+4. Enter the version number (e.g., 1.0.0)
+5. Choose whether this is a prerelease
+6. Run the workflow
+
+The action will:
+- Run linting checks
+- Build a ZIP file containing all necessary files
+- Create a GitHub release with the ZIP file attached
+
+### Locally
+
+To create a release package locally:
+
+```bash
+# Make the script executable (first time only)
+chmod +x create_release.sh
+
+# Create a release with default version (1.0.0)
+./create_release.sh
+
+# Or specify a version
+./create_release.sh 1.2.3
+```
+
+The ZIP file will be created in the `dist/` directory.
+
+## Docker Deployment
+
+You can also deploy the Server Control Suite using Docker:
+
+```bash
+# Clone the repository
+git clone https://github.com/coonlink/server-control-suite.git
+
+# Navigate to the directory
+cd server-control-suite
+
+# Build and start the container
+docker-compose up -d
+```
+
+For detailed Docker deployment instructions, see [DOCKER.md](DOCKER.md). 

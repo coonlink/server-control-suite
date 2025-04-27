@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  server-control-suite:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: server-control-suite
+    restart: unless-stopped
+    volumes:
+      - ./config:/app/config
+      - ./logs:/app/logs
+    environment:
+      - TZ=UTC
+      - PYTHONUNBUFFERED=1
+    command: python3 server_control_bot.py 
