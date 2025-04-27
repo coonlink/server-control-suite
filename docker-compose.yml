@@ -8,10 +8,9 @@ services:
     volumes:
       - ./config:/app/config
       - ./logs:/app/logs
-      - .:/app  # Mount all app files to ensure scripts can be found
     environment:
       - TZ=UTC
       - PYTHONUNBUFFERED=1
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
-    command: server_control_bot.py 
+    command: server_control_bot.py
