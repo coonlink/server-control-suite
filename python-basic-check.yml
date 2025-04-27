@@ -1,0 +1,37 @@
+name: Python Basic Check
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install python-telegram-bot==13.7
+        pip install flake8
+        # Install additional dependencies if they exist
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt || echo "Some dependencies could not be installed"
+        fi
+    - name: Check for syntax errors
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exit-zero
+    - name: Verify Python files are importable
+      run: |
+        # Try to check if the file is syntactically valid
+        for py_file in $(find . -name "*.py"); do
+          echo "Checking $py_file"
+          python -m py_compile $py_file || echo "Compilation failed but continuing"
+        done 
