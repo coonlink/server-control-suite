@@ -112,36 +112,37 @@ git pull
 systemctl restart server-control-bot
 ```
 
-## Линтер (Pylint)
+## Linting and Code Quality
 
-Проект использует Pylint для статического анализа кода. Настройки линтера хранятся в файле `.pylintrc`.
+This project uses Pylint for code quality checks. The CI pipeline requires a minimum Pylint score of 8.0/10.
 
-Для запуска линтера локально:
+### Running Pylint Locally
+
+To check your code before committing:
 
 ```bash
-# Установите зависимости
-pip install -r requirements.txt
+# Install pylint
+pip install pylint
 
-# Запустите Pylint
-pylint --rcfile=.pylintrc server_control_bot.py
+# Run pylint on all Python files
+pylint $(git ls-files '*.py')
+
+# Or with specific configuration
+pylint --rcfile=.pylintrc $(git ls-files '*.py')
 ```
 
-В CI/CD пайплайне файл `.pylintrc` используется автоматически для согласованного форматирования кода.
+### Common Pylint Issues and Fixes
 
-### Альтернативные способы проверки кода
+- **Missing docstrings**: Add descriptive docstrings to modules, classes, and functions
+- **Line too long**: Keep lines under 120 characters
+- **Unused imports**: Remove imports that aren't used
+- **Too many arguments**: Consider refactoring functions with many parameters
 
-Помимо pylint, вы можете использовать более простые инструменты проверки:
+You can disable specific checks in the `.pylintrc` file or inline in your code:
 
-```bash
-# Установите flake8
-pip install flake8
-
-# Проверка только критических ошибок синтаксиса
-flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-
-# Или используйте tox для комплексной проверки
-pip install tox
-tox
+```python
+# pylint: disable=unused-import
+import os
 ```
 
 ## Проблемы с CI/CD
