@@ -23,11 +23,11 @@ if [ -z "${TELEGRAM_CHAT_ID}" ]; then
 fi
 
 # Define thresholds for monitoring
-LOAD_THRESHOLD=5.0   # Критическая нагрузка системы
-MEM_WARNING=80       # Предупреждение о памяти (%)
-MEM_CRITICAL=90      # Критическое использование памяти (%)
-DISK_WARNING=80      # Предупреждение о диске (%)
-DISK_CRITICAL=90     # Критическое заполнение диска (%)
+LOAD_THRESHOLD=15.0   # Критическая нагрузка системы
+MEM_WARNING=85       # Предупреждение о памяти (%)
+MEM_CRITICAL=95      # Критическое использование памяти (%)
+DISK_WARNING=85      # Предупреждение о диске (%)
+DISK_CRITICAL=95     # Критическое заполнение диска (%)
 
 # CPU limits for optimization - using fixed values instead of shell variables
 CPU_LIMIT_NORMAL=50  # Нормальное ограничение CPU (%)
@@ -35,10 +35,10 @@ CPU_LIMIT_STRICT=30  # Строгое ограничение CPU (%)
 CPU_LIMIT_CRITICAL=10 # Критическое ограничение CPU (%)
 
 # Настройки пороговых значений
-LOAD_THRESHOLD=${LOAD_THRESHOLD:-5.0}        # Порог высокой нагрузки
-CPU_CRITICAL=80.0         # Критически высокое использование CPU в %
-MEM_CRITICAL=${MEM_CRITICAL:-90}        # Критическое использование памяти в %
-DISK_CRITICAL=${DISK_CRITICAL:-90}        # Критическое использование диска в %
+LOAD_THRESHOLD=${LOAD_THRESHOLD:-15.0}        # Порог высокой нагрузки
+CPU_CRITICAL=90.0         # Критически высокое использование CPU в %
+MEM_CRITICAL=${MEM_CRITICAL:-95}        # Критическое использование памяти в %
+DISK_CRITICAL=${DISK_CRITICAL:-95}        # Критическое использование диска в %
 
 # Уровни уведомлений
 NOTIFICATION_LEVELS=(
