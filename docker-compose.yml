@@ -13,4 +13,6 @@ services:
     environment:
       - TZ=UTC
       - PYTHONUNBUFFERED=1
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
     command: server_control_bot.py 
