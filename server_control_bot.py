@@ -8,17 +8,15 @@ import sys
 import json
 import logging
 import subprocess
-import asyncio
 import time
 from datetime import datetime
 try:
-    import telegram
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
     from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 except ImportError as e:
-    logging.critical(f"Ошибка импорта библиотеки python-telegram-bot: {e}")
+    logging.critical("Ошибка импорта библиотеки python-telegram-bot: %s", e)
     print(f"Критическая ошибка: {e}")
-    print("Пожалуйста, установите python-telegram-bot версии 13.7: pip install python-telegram-bot==13.7")
+    print("Установите python-telegram-bot версии 13.7: pip install python-telegram-bot==13.7")
     sys.exit(1)
 
 # Конфигурация
@@ -38,11 +36,10 @@ logging.basicConfig(
 def load_config():
     """
     Загружает конфигурацию из файлов.
-    
     Returns:
         dict: Словарь с конфигурацией
     """
-    config = {
+    cfg = {
         'BOT_TOKEN': None,
         'AUTHORIZED_ADMINS': [],
         'CPU_LIMITS': {},
@@ -55,12 +52,12 @@ def load_config():
         with open(CREDENTIALS_FILE, 'r', encoding='utf-8') as f:
             for line in f:
                 if line.startswith('TELEGRAM_BOT_TOKEN='):
-                    config['BOT_TOKEN'] = line.split('=')[1].strip().strip('"\'')
+                    cfg['BOT_TOKEN'] = line.split('=')[1].strip().strip('"\'')
     except (IOError, OSError) as e:
-        logging.error(f"Ошибка доступа к файлу учетных данных: {e}")
+        logging.error("Ошибка доступа к файлу учетных данных: %s", e)
         sys.exit(1)
-    except Exception as e:
-        logging.error(f"Неожиданная ошибка при загрузке учетных данных: {e}")
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logging.error("Неожиданная ошибка при загрузке учетных данных: %s", e)
         sys.exit(1)
     
     # Загружаем основную конфигурацию
@@ -70,33 +67,40 @@ def load_config():
             # Загружаем админов
             if 'AUTHORIZED_ADMINS=(' in content:
                 admins = content.split('AUTHORIZED_ADMINS=(')[1].split(')')[0]
-                config['AUTHORIZED_ADMINS'] = [int(x.strip().strip('"')) for x in admins.split() if x.strip('"').isdigit()]
+                # Преобразуем строки в числа, фильтруя только целые числа
+                cfg['AUTHORIZED_ADMINS'] = [
+                    int(x.strip().strip('"'))
+                    for x in admins.split()
+                    if x.strip('"').isdigit()
+                ]
             
             # Загружаем лимиты CPU
-            if 'CPU_LIMIT_NORMAL=' in content:
-                config['CPU_LIMITS']['normal'] = int(content.split('CPU_LIMIT_NORMAL=')[1].split('\n')[0])
-            if 'CPU_LIMIT_STRICT=' in content:
-                config['CPU_LIMITS']['strict'] = int(content.split('CPU_LIMIT_STRICT=')[1].split('\n')[0])
-            if 'CPU_LIMIT_CRITICAL=' in content:
-                config['CPU_LIMITS']['critical'] = int(content.split('CPU_LIMIT_CRITICAL=')[1].split('\n')[0])
+            normal = 'CPU_LIMIT_NORMAL='
+            strict = 'CPU_LIMIT_STRICT='
+            critical = 'CPU_LIMIT_CRITICAL='
+            if normal in content:
+                cfg['CPU_LIMITS']['normal'] = int(content.split(normal)[1].split('\n')[0])
+            if strict in content:
+                cfg['CPU_LIMITS']['strict'] = int(content.split(strict)[1].split('\n')[0])
+            if critical in content:
+                cfg['CPU_LIMITS']['critical'] = int(content.split(critical)[1].split('\n')[0])
     except (IOError, OSError) as e:
-        logging.error(f"Ошибка доступа к файлу конфигурации: {e}")
+        logging.error("Ошибка доступа к файлу конфигурации: %s", e)
         sys.exit(1)
     except ValueError as e:
-        logging.error(f"Ошибка формата данных при загрузке конфигурации: {e}")
+        logging.error("Ошибка формата данных при загрузке конфигурации: %s", e)
         sys.exit(1)
-    except Exception as e:
-        logging.error(f"Неожиданная ошибка при загрузке конфигурации: {e}")
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logging.error("Неожиданная ошибка при загрузке конфигурации: %s", e)
         sys.exit(1)
     
-    return config
+    return cfg
 
 config = load_config()
 
 def get_main_keyboard():
     """
     Создает основную клавиатуру бота.
-    
     Returns:
         InlineKeyboardMarkup: Объект клавиатуры
     """
@@ -123,7 +127,6 @@ def get_main_keyboard():
 def get_processes_keyboard():
     """
     Создает клавиатуру для управления процессами.
-    
     Returns:
         InlineKeyboardMarkup: Объект клавиатуры
     """
@@ -149,7 +152,6 @@ def get_processes_keyboard():
 def get_settings_keyboard():
     """
     Создает клавиатуру для настроек.
-    
     Returns:
         InlineKeyboardMarkup: Объект клавиатуры
     """
@@ -171,7 +173,6 @@ def get_settings_keyboard():
 async def save_stats_history(stats):
     """
     Сохраняет историю статистики в файл.
-    
     Args:
         stats (dict): Статистика для сохранения
     """
@@ -194,19 +195,17 @@ async def save_stats_history(stats):
         with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
             json.dump(history, f)
     except (IOError, OSError) as e:
-        logging.error(f"Ошибка доступа к файлу истории статистики: {e}")
+        logging.error("Ошибка доступа к файлу истории статистики: %s", e)
     except json.JSONDecodeError as e:
-        logging.error(f"Ошибка декодирования JSON: {e}")
-    except Exception as e:
-        logging.error(f"Неожиданная ошибка при сохранении статистики: {e}")
+        logging.error("Ошибка декодирования JSON: %s", e)
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logging.error("Неожиданная ошибка при сохранении статистики: %s", e)
 
 async def get_stats_history(hours=24):
     """
     Получает историю статистики за указанный период.
-    
     Args:
         hours (int): Количество часов для фильтрации
-        
     Returns:
         list: Список записей истории
     """
@@ -217,26 +216,25 @@ async def get_stats_history(hours=24):
                 
             # Фильтруем по времени
             current_time = datetime.now()
+            hours_in_seconds = hours * 3600
             filtered_history = [
-                h for h in history 
-                if (current_time - datetime.fromisoformat(h['timestamp'])).total_seconds() <= hours * 3600
+                h for h in history
+                if (current_time - datetime.fromisoformat(h['timestamp'])).total_seconds() <= hours_in_seconds
             ]
             return filtered_history
     except (IOError, OSError) as e:
-        logging.error(f"Ошибка доступа к файлу истории статистики: {e}")
+        logging.error("Ошибка доступа к файлу истории статистики: %s", e)
     except json.JSONDecodeError as e:
-        logging.error(f"Ошибка декодирования JSON: {e}")
-    except Exception as e:
-        logging.error(f"Неожиданная ошибка при чтении статистики: {e}")
+        logging.error("Ошибка декодирования JSON: %s", e)
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logging.error("Неожиданная ошибка при чтении статистики: %s", e)
     return []
 
 def is_authorized(user_id):
     """
     Проверяет, авторизован ли пользователь.
-    
     Args:
         user_id (int): ID пользователя Telegram
-        
     Returns:
         bool: True, если пользователь авторизован
     """
@@ -245,10 +243,8 @@ def is_authorized(user_id):
 def measure_time(func):
     """
     Декоратор для измерения времени выполнения функции.
-    
     Args:
         func (callable): Функция для измерения
-        
     Returns:
         callable: Обернутая функция
     """
@@ -256,13 +252,14 @@ def measure_time(func):
         start_time = time.time()
         result = await func(*args, **kwargs)
         end_time = time.time()
-        generation_time = (end_time - start_time) * 1000  # конвертируем в миллисекунды
+        # Конвертируем в миллисекунды
+        _ = (end_time - start_time) * 1000
         
         return result
     return wrapper
 
 # Обработчики команд
-def start_command(update: Update, context: CallbackContext):
+def start_command(update: Update, _context: CallbackContext):
     """Обработчик команд /start и /help."""
     if not is_authorized(update.effective_user.id):
         update.message.reply_text("⛔ У вас нет доступа к этому боту.")
@@ -281,7 +278,7 @@ def start_command(update: Update, context: CallbackContext):
     )
 
 # Обработчик callback-запросов
-def button_callback(update: Update, context: CallbackContext):
+def button_callback(update: Update, _context: CallbackContext):  # pylint: disable=too-many-branches,too-many-statements
     """Обработчик нажатий на кнопки."""
     query = update.callback_query
     query.answer()
@@ -294,9 +291,7 @@ def button_callback(update: Update, context: CallbackContext):
     
     try:
         if action == "stats":
-            # Здесь должен быть асинхронный вызов get_stats_history
-            # Так как в python-telegram-bot 13.7 мы не можем использовать асинхронные функции напрямую,
-            # мы будем использовать синхронный подход
+            # Использование синхронного подхода вместо асинхронного
             stats_text = "📈 Статистика недоступна в этой версии"
             
             query.edit_message_text(
@@ -307,7 +302,8 @@ def button_callback(update: Update, context: CallbackContext):
         
         elif action == "night_mode":
             # Включаем ночной режим
-            subprocess.Popen(["/root/night_optimize.sh"])
+            with subprocess.Popen(["/root/night_optimize.sh"]) as _:
+                pass
             query.edit_message_text(
                 "🌙 Ночной режим активирован\n"
                 "- Ограничение CPU: 5%\n"
@@ -325,17 +321,16 @@ def button_callback(update: Update, context: CallbackContext):
         
         elif action == "status":
             try:
+                cmd = ["/root/check_server_status.sh", "--silent"]
                 result = subprocess.check_output(
-                    ["/root/check_server_status.sh", "--silent"], 
-                    stderr=subprocess.STDOUT, 
-                    universal_newlines=True
+                    cmd, stderr=subprocess.STDOUT, universal_newlines=True
                 )
                 query.edit_message_text(
                     f"📊 Статус сервера:\n\n{result}",
                     reply_markup=get_main_keyboard()
                 )
             except subprocess.CalledProcessError as e:
-                logging.error(f"Ошибка выполнения скрипта статуса: {e}")
+                logging.error("Ошибка выполнения скрипта статуса: %s", e)
                 query.edit_message_text(
                     f"❌ Ошибка получения статуса: {e.output}",
                     reply_markup=get_main_keyboard()
@@ -348,7 +343,8 @@ def button_callback(update: Update, context: CallbackContext):
             )
         
         elif action == "optimize":
-            subprocess.Popen(["/root/optimize_server.sh"])
+            with subprocess.Popen(["/root/optimize_server.sh"]) as _:
+                pass
             query.edit_message_text(
                 "⚡ Оптимизация запущена\n"
                 "Результаты будут отправлены после завершения.",
@@ -363,25 +359,26 @@ def button_callback(update: Update, context: CallbackContext):
         
         elif action == "cleanup":
             try:
-                subprocess.run("sync && echo 3 > /proc/sys/vm/drop_caches", 
-                               shell=True, 
-                               check=True, 
-                               stderr=subprocess.PIPE)
+                subprocess.run(
+                    "sync && echo 3 > /proc/sys/vm/drop_caches",
+                    shell=True, check=True, stderr=subprocess.PIPE
+                )
                 query.edit_message_text(
                     "🧹 Очистка кэша выполнена",
                     reply_markup=get_main_keyboard()
                 )
             except subprocess.CalledProcessError as e:
-                logging.error(f"Ошибка очистки кэша: {e}")
+                logging.error("Ошибка очистки кэша: %s", e)
+                error_msg = e.stderr.decode() if e.stderr else str(e)
                 query.edit_message_text(
-                    f"❌ Ошибка очистки кэша: {e.stderr.decode() if e.stderr else str(e)}",
+                    f"❌ Ошибка очистки кэша: {error_msg}",
                     reply_markup=get_main_keyboard()
                 )
         
         elif action == "show_all_processes":
             try:
                 result = subprocess.check_output(
-                    ["ps", "aux", "--sort=-%cpu"], 
+                    ["ps", "aux", "--sort=-%cpu"],
                     universal_newlines=True
                 )
                 # Берем только первые 11 строк (заголовок + 10 процессов)
@@ -394,7 +391,7 @@ def button_callback(update: Update, context: CallbackContext):
                     reply_markup=get_processes_keyboard()
                 )
             except subprocess.CalledProcessError as e:
-                logging.error(f"Ошибка получения списка процессов: {e}")
+                logging.error("Ошибка получения списка процессов: %s", e)
                 query.edit_message_text(
                     f"❌ Ошибка получения списка процессов: {e.output}",
                     reply_markup=get_processes_keyboard()
@@ -402,17 +399,16 @@ def button_callback(update: Update, context: CallbackContext):
         
         elif action == "heavy_processes":
             try:
+                cmd = ["/root/monitor_heavy_processes.sh", "--analyze"]
                 result = subprocess.check_output(
-                    ["/root/monitor_heavy_processes.sh", "--analyze"], 
-                    stderr=subprocess.STDOUT, 
-                    universal_newlines=True
+                    cmd, stderr=subprocess.STDOUT, universal_newlines=True
                 )
                 query.edit_message_text(
                     f"⚠️ Тяжелые процессы:\n\n{result}",
                     reply_markup=get_processes_keyboard()
                 )
             except subprocess.CalledProcessError as e:
-                logging.error(f"Ошибка анализа тяжелых процессов: {e}")
+                logging.error("Ошибка анализа тяжелых процессов: %s", e)
                 query.edit_message_text(
                     f"❌ Ошибка анализа процессов: {e.output}",
                     reply_markup=get_processes_keyboard()
@@ -447,7 +443,7 @@ def button_callback(update: Update, context: CallbackContext):
                         reply_markup=get_processes_keyboard()
                     )
                 except subprocess.CalledProcessError as e:
-                    logging.error(f"Ошибка чтения лог-файла {log_file}: {e}")
+                    logging.error("Ошибка чтения лог-файла %s: %s", log_file, e)
                     query.edit_message_text(
                         f"❌ Ошибка чтения лог-файла: {e.output}",
                         reply_markup=get_processes_keyboard()
@@ -459,13 +455,13 @@ def button_callback(update: Update, context: CallbackContext):
             )
     
     except subprocess.SubprocessError as e:
-        logging.error(f"Ошибка выполнения subprocess при обработке callback {action}: {e}")
+        logging.error("Ошибка выполнения subprocess при обработке callback %s: %s", action, e)
         query.edit_message_text(
             f"❌ Ошибка выполнения команды: {str(e)}",
             reply_markup=get_main_keyboard()
         )
-    except Exception as e:
-        logging.error(f"Ошибка при обработке callback {action}: {e}", exc_info=True)
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logging.error("Ошибка при обработке callback %s: %s", action, e, exc_info=True)
         query.edit_message_text(
             f"❌ Неожиданная ошибка: {str(e)}",
             reply_markup=get_main_keyboard()
@@ -477,9 +473,8 @@ def stats_collector():
     Периодический сбор статистики о системе.
     Запускается в фоновом режиме и сохраняет данные каждые 5 минут.
     """
-    # Так как в python-telegram-bot 13.7 сложнее работать с асинхронным кодом,
-    # мы упростим эту функцию и не будем использовать асинхронные операции
-    pass
+    # Реализация отсутствует, так как в python-telegram-bot 13.7
+    # сложнее работать с асинхронным кодом
 
 # Запуск бота
 if __name__ == '__main__':
@@ -505,6 +500,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         logging.info("Бот остановлен пользователем")
         print("Бот остановлен пользователем")
-    except Exception as e:
-        logging.critical(f"Критическая ошибка при запуске бота: {e}", exc_info=True)
-        print(f"Критическая ошибка при запуске бота: {e}") 
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logging.critical("Критическая ошибка при запуске бота: %s", e, exc_info=True)
+        print(f"Критическая ошибка при запуске бота: {e}")
