@@ -44,9 +44,48 @@ The docker-compose.yml defines two volumes:
 
 ### Environment Variables
 
-You can customize the deployment by setting environment variables in the docker-compose.yml file:
-- `TZ` - Timezone (default: UTC)
-- `PYTHONUNBUFFERED` - Ensures Python output is sent straight to the container logs
+The Server Control Suite supports the following environment variables for configuration:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `TELEGRAM_BOT_TOKEN` | Yes | Your Telegram bot token obtained from BotFather |
+| `TELEGRAM_CHAT_ID` | Yes | Your Telegram chat ID (authorized administrator) |
+| `TZ` | No | Timezone (default: UTC) |
+| `PYTHONUNBUFFERED` | No | Set to 1 to ensure Python output is unbuffered |
+
+#### Setting Environment Variables in Dokploy
+
+If you're using Dokploy, you can set these variables in the Environment tab:
+
+```
+TELEGRAM_BOT_TOKEN=your_token_here
+TELEGRAM_CHAT_ID=your_chat_id_here
+```
+
+#### Setting Environment Variables in docker-compose.yml
+
+You can set these variables directly in your docker-compose.yml file:
+
+```yaml
+services:
+  server-control-suite:
+    # ... other settings ...
+    environment:
+      - TELEGRAM_BOT_TOKEN=your_token_here
+      - TELEGRAM_CHAT_ID=your_chat_id_here
+      - TZ=UTC
+```
+
+#### Using .env File
+
+You can also create a `.env` file in the same directory as your docker-compose.yml:
+
+```
+TELEGRAM_BOT_TOKEN=your_token_here
+TELEGRAM_CHAT_ID=your_chat_id_here
+```
+
+And then docker-compose will automatically use these variables.
 
 ## Customization
 
