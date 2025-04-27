@@ -1,6 +1,8 @@
 #!/bin/bash
 # Setup script for CI environment
 
+set -e  # Exit immediately if a command exits with a non-zero status
+
 echo "Setting up CI environment for Server Control Suite"
 
 # Update pip to latest version
@@ -29,6 +31,10 @@ if [ -f requirements.txt ]; then
     pip install -r requirements.txt || echo "WARNING: Some dependencies could not be installed"
 fi
 
+# Install additional testing dependencies
+echo "Installing flake8 for basic syntax checking..."
+pip install flake8
+
 # Verify pylint configuration
 if [ -f .pylintrc ]; then
     echo "Found pylint configuration (.pylintrc)"
@@ -40,4 +46,4 @@ fi
 echo "Installed packages:"
 pip list
 
-echo "CI environment setup complete" 
+echo "CI environment setup complete"
