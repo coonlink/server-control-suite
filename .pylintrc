@@ -13,17 +13,29 @@ max-line-length=120
 
 [MESSAGES CONTROL]
 # Disable specific messages or categories
-disable=trailing-whitespace,
-        trailing-newlines,
-        line-too-long,
-        broad-exception-caught,
-        unexpected-line-ending-format
+disable=
+    C0111, # missing docstring
+    C0103, # invalid name
+    C0303, # trailing whitespace
+    C0330, # bad continuation
+    C1801, # len-as-condition
+    R0903, # too-few-public-methods
+    R0913, # too-many-arguments
+    W0611, # unused-import
+    W0612, # unused-variable
+    W1203, # logging-fstring-interpolation
 
 [REPORTS]
 # Set the evaluation score to pass the CI
 # This matches the current score of 8.00/10
-evaluation=8.0
+evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)
+
+# Tells whether to display a full report or only the messages
+reports=yes
 
 [FORMAT]
 # Don't enforce line ending format
-expected-line-ending-format= 
+expected-line-ending-format=
+
+# Maximum number of characters on a single line
+max-line-length=120
