@@ -374,7 +374,24 @@ def button_callback(update: Update, _context: CallbackContext):  # pylint: disab
             )
         
         elif action == "night_mode":
-            # Включаем ночной режим
+            # Запрос подтверждения перед включением ночного режима
+            keyboard = [
+                [
+                    InlineKeyboardButton("✅ Да, включить", callback_data="confirm_night_mode"),
+                    InlineKeyboardButton("❌ Отмена", callback_data="main_menu")
+                ]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            query.edit_message_text(
+                "🌙 Вы уверены, что хотите включить ночной режим?\n\n"
+                "⚠️ Это действие ограничит производительность сервера "
+                "и может повлиять на работающие сервисы.",
+                reply_markup=reply_markup
+            )
+        
+        elif action == "confirm_night_mode":
+            # Включаем ночной режим после подтверждения
             night_script = os.path.join(BASE_DIR, "night_optimize.sh")
             with subprocess.Popen([night_script]) as _:
                 pass
@@ -412,12 +429,47 @@ def button_callback(update: Update, _context: CallbackContext):  # pylint: disab
                 )
         
         elif action == "processes":
+            # Запрос подтверждения перед управлением процессами
+            keyboard = [
+                [
+                    InlineKeyboardButton("✅ Да, продолжить", callback_data="confirm_processes"),
+                    InlineKeyboardButton("❌ Отмена", callback_data="main_menu")
+                ]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            query.edit_message_text(
+                "🔄 Вы уверены, что хотите управлять процессами?\n\n"
+                "⚠️ Изменение работающих процессов может повлиять "
+                "на стабильность работы сервера.",
+                reply_markup=reply_markup
+            )
+        
+        elif action == "confirm_processes":
+            # Показываем меню управления процессами после подтверждения
             query.edit_message_text(
                 "🔄 Управление процессами:",
                 reply_markup=get_processes_keyboard()
             )
         
         elif action == "optimize":
+            # Запрос подтверждения перед оптимизацией
+            keyboard = [
+                [
+                    InlineKeyboardButton("✅ Да, оптимизировать", callback_data="confirm_optimize"),
+                    InlineKeyboardButton("❌ Отмена", callback_data="main_menu")
+                ]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            query.edit_message_text(
+                "⚡ Вы уверены, что хотите запустить оптимизацию сервера?\n\n"
+                "⚠️ Во время оптимизации возможно временное снижение производительности.",
+                reply_markup=reply_markup
+            )
+        
+        elif action == "confirm_optimize":
+            # Запускаем оптимизацию после подтверждения
             optimize_script = os.path.join(BASE_DIR, "optimize_server.sh")
             with subprocess.Popen([optimize_script]) as _:
                 pass
@@ -434,6 +486,23 @@ def button_callback(update: Update, _context: CallbackContext):  # pylint: disab
             )
         
         elif action == "cleanup":
+            # Запрос подтверждения перед очисткой кэша
+            keyboard = [
+                [
+                    InlineKeyboardButton("✅ Да, очистить", callback_data="confirm_cleanup"),
+                    InlineKeyboardButton("❌ Отмена", callback_data="main_menu")
+                ]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            query.edit_message_text(
+                "🧹 Вы уверены, что хотите очистить кэш сервера?\n\n"
+                "⚠️ Это действие может на короткое время замедлить работу приложений.",
+                reply_markup=reply_markup
+            )
+        
+        elif action == "confirm_cleanup":
+            # Выполняем очистку кэша после подтверждения
             try:
                 subprocess.run(
                     "sync && echo 3 > /proc/sys/vm/drop_caches",
@@ -599,6 +668,59 @@ def send_status_report(context: CallbackContext):
         except Exception as e:
             logging.error("Ошибка отправки отчета администратору %s: %s", admin_id, e)
 
+# Функция для проверки нагрузки системы и отправки предупреждений
+def check_system_load(context: CallbackContext):
+    """
+    Проверяет текущую нагрузку системы и отправляет предупреждения если она превышает лимиты.
+    
+    Args:
+        context (CallbackContext): Контекст вызова
+    """
+    try:
+        # Получаем текущую нагрузку системы
+        load_avg = os.getloadavg()
+        one_min_load = load_avg[0]
+        
+        # Проверяем превышение лимитов
+        critical_limit = config['CPU_LIMITS'].get('critical', 10)
+        strict_limit = config['CPU_LIMITS'].get('strict', 30)
+        normal_limit = config['CPU_LIMITS'].get('normal', 50)
+        
+        # Высокая нагрузка - отправляем предупреждение
+        if one_min_load > normal_limit:
+            message = f"⚠️ ВНИМАНИЕ! Высокая нагрузка системы: {one_min_load:.2f}\n\n"
+            message += "Рекомендуемые действия:\n"
+            message += "1. Запустите оптимизацию сервера: ./optimize_server.sh\n"
+            message += "2. Проверьте тяжелые процессы: ./monitor_heavy_processes.sh"
+            
+            # Формируем клавиатуру с быстрыми действиями
+            keyboard = [
+                [
+                    InlineKeyboardButton("⚡ Оптимизировать", callback_data="optimize"),
+                    InlineKeyboardButton("🔍 Тяжелые процессы", callback_data="heavy_processes")
+                ],
+                [
+                    InlineKeyboardButton("📊 Статус", callback_data="status"),
+                    InlineKeyboardButton("🌙 Ночной режим", callback_data="night_mode")
+                ]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            # Отправляем предупреждение всем администраторам
+            for admin_id in config['AUTHORIZED_ADMINS']:
+                try:
+                    context.bot.send_message(
+                        chat_id=admin_id,
+                        text=message,
+                        reply_markup=reply_markup
+                    )
+                    logging.info("Отправлено предупреждение о высокой нагрузке админу %s", admin_id)
+                except Exception as e:
+                    logging.error("Ошибка отправки предупреждения админу %s: %s", admin_id, e)
+    
+    except Exception as e:
+        logging.error("Ошибка при проверке нагрузки системы: %s", e)
+
 # Запуск бота
 if __name__ == '__main__':
     try:
@@ -626,6 +748,14 @@ if __name__ == '__main__':
             first=300  # Первый отчет через 5 минут после запуска
         )
         logging.info("Планировщик периодических отчетов запущен. Интервал: %s секунд", STATUS_REPORT_INTERVAL)
+        
+        # Запускаем планировщик проверки нагрузки системы
+        job_queue.run_repeating(
+            check_system_load,
+            interval=600,  # Проверяем каждые 10 минут
+            first=120  # Первая проверка через 2 минуты после запуска
+        )
+        logging.info("Планировщик проверки нагрузки системы запущен. Интервал: 600 секунд")
         
         # Удаляем проблемную строку, которая вызывает ошибку
         # Просто информируем о регистрации обработчиков
