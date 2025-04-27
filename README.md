@@ -1,9 +1,5 @@
 <h1 align="center">Server Control Suite</h1>
 
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/b1f6a9f3-2690-41ef-8c7a-c3119f29bab3" alt="Preview" width="600px">
-</div>
-
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.7+-blue.svg" alt="Python Version">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
