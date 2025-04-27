@@ -13,4 +13,4 @@ services:
     environment:
       - TZ=UTC
       - PYTHONUNBUFFERED=1
-    command: python3 server_control_bot.py 
+    command: server_control_bot.py 
