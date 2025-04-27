@@ -28,6 +28,9 @@ CREDENTIALS_FILE = os.path.join(BASE_DIR, ".telegram_credentials")
 LOG_FILE = os.path.join(BASE_DIR, "server_control_bot.log")
 HISTORY_FILE = os.path.join(BASE_DIR, "server_stats_history.json")
 
+# Периодический отчет - интервал в секундах
+STATUS_REPORT_INTERVAL = 3600  # 1 час
+
 # Логирование в консоль и файл
 logging.basicConfig(
     level=logging.INFO,
@@ -320,7 +323,7 @@ def start_command(update: Update, _context: CallbackContext):
         return
     
     update.message.reply_text(
-        "🤖 Панель управления сервером v2.0\n\n"
+        "🤖 Панель управления сервером v1.0\n\n"
         "🆕 Новые функции:\n"
         "- 📈 Статистика и история нагрузки\n"
         "- 🌙 Ночной режим\n"
@@ -335,15 +338,31 @@ def start_command(update: Update, _context: CallbackContext):
 def button_callback(update: Update, _context: CallbackContext):  # pylint: disable=too-many-branches,too-many-statements
     """Обработчик нажатий на кнопки."""
     query = update.callback_query
-    query.answer()
+    
+    # Добавляем подробное логирование
+    logging.info("Получен callback: %s от пользователя %s", 
+                 query.data, query.from_user.id)
+    
+    # Отвечаем на callback, чтобы убрать часы загрузки
+    try:
+        query.answer()
+    except Exception as e:
+        logging.error("Ошибка при ответе на callback: %s", e)
     
     if not is_authorized(query.from_user.id):
-        query.edit_message_text("⛔ У вас нет доступа к этому действию.")
+        try:
+            query.edit_message_text("⛔ У вас нет доступа к этому действию.")
+            logging.warning("Попытка неавторизованного доступа от ID: %s", 
+                           query.from_user.id)
+        except Exception as e:
+            logging.error("Ошибка при отправке сообщения о неавторизованном доступе: %s", e)
         return
     
     action = query.data
     
     try:
+        logging.info("Начинаем обработку действия: %s", action)
+        
         if action == "stats":
             # Использование синхронного подхода вместо асинхронного
             stats_text = "📈 Статистика недоступна в этой версии"
@@ -514,25 +533,71 @@ def button_callback(update: Update, _context: CallbackContext):  # pylint: disab
     
     except subprocess.SubprocessError as e:
         logging.error("Ошибка выполнения subprocess при обработке callback %s: %s", action, e)
-        query.edit_message_text(
-            f"❌ Ошибка выполнения команды: {str(e)}",
-            reply_markup=get_main_keyboard()
-        )
+        try:
+            query.edit_message_text(
+                f"❌ Ошибка выполнения команды: {str(e)}",
+                reply_markup=get_main_keyboard()
+            )
+        except Exception as edit_err:
+            logging.error("Не удалось отредактировать сообщение: %s", edit_err)
     except Exception as e:  # pylint: disable=broad-exception-caught
         logging.error("Ошибка при обработке callback %s: %s", action, e, exc_info=True)
-        query.edit_message_text(
-            f"❌ Неожиданная ошибка: {str(e)}",
-            reply_markup=get_main_keyboard()
-        )
+        try:
+            query.edit_message_text(
+                f"❌ Неожиданная ошибка: {str(e)}",
+                reply_markup=get_main_keyboard()
+            )
+        except Exception as edit_err:
+            logging.error("Не удалось отредактировать сообщение: %s", edit_err)
 
-# Функция для сбора статистики (работает в отдельном потоке)
-def stats_collector():
+# Функция для получения статуса сервера
+def get_server_status():
     """
-    Периодический сбор статистики о системе.
-    Запускается в фоновом режиме и сохраняет данные каждые 5 минут.
+    Получает текущий статус сервера, используя скрипт check_server_status.sh
+    Returns:
+        str: Текстовое представление статуса сервера
     """
-    # Реализация отсутствует, так как в python-telegram-bot 13.7
-    # сложнее работать с асинхронным кодом
+    try:
+        status_script = os.path.join(BASE_DIR, "check_server_status.sh")
+        cmd = [status_script, "--silent"]
+        result = subprocess.check_output(
+            cmd, stderr=subprocess.STDOUT, universal_newlines=True
+        )
+        return result
+    except subprocess.CalledProcessError as e:
+        logging.error("Ошибка выполнения скрипта статуса: %s", e)
+        return f"❌ Ошибка получения статуса: {e.output}"
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logging.error("Неожиданная ошибка при получении статуса: %s", e)
+        return f"❌ Неожиданная ошибка: {str(e)}"
+
+# Функция для отправки периодического отчета о статусе
+def send_status_report(context: CallbackContext):
+    """
+    Отправляет периодический отчет о статусе сервера всем администраторам.
+    Args:
+        context (CallbackContext): Контекст вызова
+    """
+    status = get_server_status()
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    hostname = subprocess.check_output("hostname", universal_newlines=True).strip()
+    
+    message = f"📊 *Периодический отчет о статусе сервера*\n\n" \
+              f"📆 Время: {timestamp}\n" \
+              f"🖥️ Хост: {hostname}\n\n" \
+              f"{status}"
+    
+    # Отправляем сообщение всем администраторам
+    for admin_id in config['AUTHORIZED_ADMINS']:
+        try:
+            context.bot.send_message(
+                chat_id=admin_id,
+                text=message,
+                parse_mode="Markdown"
+            )
+            logging.info("Отправлен периодический отчет администратору %s", admin_id)
+        except Exception as e:
+            logging.error("Ошибка отправки отчета администратору %s: %s", admin_id, e)
 
 # Запуск бота
 if __name__ == '__main__':
@@ -548,13 +613,33 @@ if __name__ == '__main__':
         # Регистрируем обработчики
         dispatcher.add_handler(CommandHandler("start", start_command))
         dispatcher.add_handler(CommandHandler("help", start_command))
-        dispatcher.add_handler(CallbackQueryHandler(button_callback))
         
+        # Регистрируем обработчик callback кнопок и проверяем его наличие
+        callback_handler = CallbackQueryHandler(button_callback)
+        dispatcher.add_handler(callback_handler)
+        
+        # Запускаем планировщик периодических отчетов
+        job_queue = updater.job_queue
+        job_queue.run_repeating(
+            send_status_report, 
+            interval=STATUS_REPORT_INTERVAL,
+            first=300  # Первый отчет через 5 минут после запуска
+        )
+        logging.info("Планировщик периодических отчетов запущен. Интервал: %s секунд", STATUS_REPORT_INTERVAL)
+        
+        # Проверка зарегистрированных обработчиков
+        handlers = dispatcher._handlers
+        logging.info("Зарегистрированные обработчики: %s", handlers)
+        
+        # Запуск бота с подробным логированием
+        logging.info("Запускаем polling...")
         print("Бот запущен. Нажмите Ctrl+C для остановки.")
         
-        # Запускаем бота
-        updater.start_polling()
+        # Запускаем бота с более частой проверкой обновлений и подробным логированием
+        updater.start_polling(poll_interval=1.0, timeout=30, drop_pending_updates=False, read_latency=2.0)
+        logging.info("Polling запущен успешно")
         updater.idle()
+        
     except KeyboardInterrupt:
         logging.info("Бот остановлен пользователем")
         print("Бот остановлен пользователем")
