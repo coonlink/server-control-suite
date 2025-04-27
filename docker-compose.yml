@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   server-control-suite:
     build:
@@ -10,7 +8,7 @@ services:
     volumes:
       - ./config:/app/config
       - ./logs:/app/logs
-      - .:/app # Mount all app files to ensure scripts can be found
+      - .:/app  # Mount all app files to ensure scripts can be found
     environment:
       - TZ=UTC
       - PYTHONUNBUFFERED=1
