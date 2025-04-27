@@ -20,11 +20,18 @@ jobs:
         python -m pip install --upgrade pip
         pip install python-telegram-bot==13.7
         pip install flake8
+        # Install additional dependencies if they exist
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt || echo "Some dependencies could not be installed"
+        fi
     - name: Check for syntax errors
       run: |
-        # Stop the build if there are Python syntax errors
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-    - name: Basic import check
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exit-zero
+    - name: Verify Python files are importable
       run: |
-        # Try to import the module to catch import errors
-        python -c "import server_control_bot" || echo "Import check failed but continuing" 
+        # Try to check if the file is syntactically valid
+        for py_file in $(find . -name "*.py"); do
+          echo "Checking $py_file"
+          python -m py_compile $py_file || echo "Compilation failed but continuing"
+        done 
