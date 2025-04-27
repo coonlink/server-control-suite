@@ -29,14 +29,8 @@ jobs:
         echo "Running pylint for code quality analysis (Python ${{ matrix.python-version }})"
         python -m pylint --rcfile=.pylintrc $(git ls-files '*.py') > pylint-report-${{ matrix.python-version }}.txt 2>&1 || true
         pylint --rcfile=.pylintrc --fail-under=8.0 $(git ls-files '*.py') || true
-    - name: Verify report file exists
+    - name: Debug Information
       run: |
+        echo "Checking Python version: ${{ matrix.python-version }}"
+        echo "Workspace directory contents:"
         ls -la
-        du -h ./pylint-report-${{ matrix.python-version }}.txt || echo "File not found"
-    - name: Upload pylint report
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: pylint-report
-        path: ./*report*.txt
-        retention-days: 5
