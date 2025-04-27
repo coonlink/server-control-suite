@@ -48,7 +48,11 @@ def load_config():
     cfg = {
         'BOT_TOKEN': None,
         'AUTHORIZED_ADMINS': [],
-        'CPU_LIMITS': {},
+        'CPU_LIMITS': {
+            'normal': 50,    # Default values
+            'strict': 30,
+            'critical': 10
+        },
         'MEMORY_LIMITS': {},
         'NOTIFICATION_LEVELS': {}
     }
@@ -91,37 +95,46 @@ def load_config():
     
     # Загружаем основную конфигурацию
     try:
-        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-            content = f.read()
-            # Загружаем админов если они не были загружены из переменных окружения
-            if not cfg['AUTHORIZED_ADMINS'] and 'AUTHORIZED_ADMINS=(' in content:
-                admins = content.split('AUTHORIZED_ADMINS=(')[1].split(')')[0]
-                # Преобразуем строки в числа, фильтруя только целые числа
-                cfg['AUTHORIZED_ADMINS'] = [
-                    int(x.strip().strip('"'))
-                    for x in admins.split()
-                    if x.strip('"').isdigit()
-                ]
-            
-            # Загружаем лимиты CPU
-            normal = 'CPU_LIMIT_NORMAL='
-            strict = 'CPU_LIMIT_STRICT='
-            critical = 'CPU_LIMIT_CRITICAL='
-            if normal in content:
-                cfg['CPU_LIMITS']['normal'] = int(content.split(normal)[1].split('\n')[0])
-            if strict in content:
-                cfg['CPU_LIMITS']['strict'] = int(content.split(strict)[1].split('\n')[0])
-            if critical in content:
-                cfg['CPU_LIMITS']['critical'] = int(content.split(critical)[1].split('\n')[0])
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                content = f.read()
+                # Загружаем админов если они не были загружены из переменных окружения
+                if not cfg['AUTHORIZED_ADMINS'] and 'AUTHORIZED_ADMINS=(' in content:
+                    try:
+                        admins = content.split('AUTHORIZED_ADMINS=(')[1].split(')')[0]
+                        # Преобразуем строки в числа, фильтруя только целые числа
+                        cfg['AUTHORIZED_ADMINS'] = [
+                            int(x.strip().strip('"'))
+                            for x in admins.split()
+                            if x.strip('"').isdigit()
+                        ]
+                    except Exception as e:
+                        logging.warning("Не удалось загрузить ID администраторов: %s", e)
+                
+                # Загружаем лимиты CPU
+                try:
+                    # Ищем значения переменных, исключая shell-переменные с ${} и комментарии
+                    normal_pattern = r'CPU_LIMIT_NORMAL=(\d+)'
+                    strict_pattern = r'CPU_LIMIT_STRICT=(\d+)'
+                    critical_pattern = r'CPU_LIMIT_CRITICAL=(\d+)'
+                    
+                    import re
+                    normal_match = re.search(normal_pattern, content)
+                    strict_match = re.search(strict_pattern, content)
+                    critical_match = re.search(critical_pattern, content)
+                    
+                    if normal_match:
+                        cfg['CPU_LIMITS']['normal'] = int(normal_match.group(1))
+                    if strict_match:
+                        cfg['CPU_LIMITS']['strict'] = int(strict_match.group(1))
+                    if critical_match:
+                        cfg['CPU_LIMITS']['critical'] = int(critical_match.group(1))
+                except Exception as e:
+                    logging.warning("Ошибка при загрузке лимитов CPU, используются значения по умолчанию: %s", e)
     except (IOError, OSError) as e:
         logging.error("Ошибка доступа к файлу конфигурации: %s", e)
-        sys.exit(1)
-    except ValueError as e:
-        logging.error("Ошибка формата данных при загрузке конфигурации: %s", e)
-        sys.exit(1)
     except Exception as e:  # pylint: disable=broad-exception-caught
         logging.error("Неожиданная ошибка при загрузке конфигурации: %s", e)
-        sys.exit(1)
     
     # Проверяем наличие необходимых данных
     if not cfg['BOT_TOKEN']:
@@ -130,6 +143,10 @@ def load_config():
     
     if not cfg['AUTHORIZED_ADMINS']:
         logging.warning("Не указаны авторизованные администраторы. Доступ к боту будет ограничен.")
+    
+    # Log the configuration (without sensitive data)
+    logging.info("Конфигурация загружена успешно")
+    logging.info("CPU лимиты: %s", cfg['CPU_LIMITS'])
     
     return cfg
 

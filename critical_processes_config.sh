@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Конфигурационный файл для критичных процессов и настроек оптимизации
+# Configuration file for server monitoring and management scripts
 
 # Check if TELEGRAM_BOT_TOKEN is set in environment, otherwise use default
 if [ -z "${TELEGRAM_BOT_TOKEN}" ]; then
@@ -21,6 +21,18 @@ if [ -z "${TELEGRAM_CHAT_ID}" ]; then
     AUTHORIZED_ADMINS=("CHAT_ID_HERE")
   fi
 fi
+
+# Define thresholds for monitoring
+LOAD_THRESHOLD=5.0   # Критическая нагрузка системы
+MEM_WARNING=80       # Предупреждение о памяти (%)
+MEM_CRITICAL=90      # Критическое использование памяти (%)
+DISK_WARNING=80      # Предупреждение о диске (%)
+DISK_CRITICAL=90     # Критическое заполнение диска (%)
+
+# CPU limits for optimization - using fixed values instead of shell variables
+CPU_LIMIT_NORMAL=50  # Нормальное ограничение CPU (%)
+CPU_LIMIT_STRICT=30  # Строгое ограничение CPU (%)
+CPU_LIMIT_CRITICAL=10 # Критическое ограничение CPU (%)
 
 # Настройки пороговых значений
 LOAD_THRESHOLD=${LOAD_THRESHOLD:-5.0}        # Порог высокой нагрузки
@@ -71,11 +83,6 @@ STOPPABLE_PROCESSES=(
   "grep"
   "clamd"
 )
-
-# Ограничения CPU для процессов
-CPU_LIMIT_NORMAL=${CPU_LIMIT_NORMAL:-50}       # Нормальное ограничение CPU
-CPU_LIMIT_STRICT=${CPU_LIMIT_STRICT:-30}       # Строгое ограничение CPU
-CPU_LIMIT_CRITICAL=${CPU_LIMIT_CRITICAL:-10}      # Критическое ограничение CPU
 
 # Ограничения памяти (в МБ)
 MEM_LIMIT_NORMAL=1024    # Обычное ограничение памяти
