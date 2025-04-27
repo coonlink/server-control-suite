@@ -34,6 +34,9 @@ RUN chmod +x *.sh
 # Move example configuration to config directory
 RUN cp .telegram_credentials.example /app/config/.telegram_credentials.example
 
+# Make sure all files are readable
+RUN chmod -R 755 /app
+
 # Set entrypoint
-ENTRYPOINT ["python3"]
+ENTRYPOINT ["python"]
 CMD ["server_control_bot.py"] 
